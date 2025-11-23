@@ -14,14 +14,18 @@ export function generateSummary(customers) {
 
   const today = new Date();
 
-  // customers coming from Excel look like:
+  // Customers coming from Excel look like:
   // { name, lastVisit, service, revenue, contacted }
 
+  // ⭐ NEW HOT LIST LOGIC — SHOW CUSTOMERS VISITED IN LAST 7 DAYS
   const hotList = customers.filter((c) => {
     if (!c.lastVisit) return false;
+
     const last = new Date(c.lastVisit);
     const diff = (today - last) / (1000 * 60 * 60 * 24);
-    return diff > 30; // overdue
+
+    // Show customers who visited TODAY or within last 7 days
+    return diff >= 0 && diff <= 7;
   });
 
   const contactedToday = customers.filter((c) => c.contacted === true);
