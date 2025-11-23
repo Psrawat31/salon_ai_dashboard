@@ -1,21 +1,22 @@
 import { create } from "zustand";
 
-let memoryStore = {
-  customers: []
-};
+export const useCustomerStore = create((set) => ({
+  customers: [],
 
-const useCustomerStore = create((set) => ({
-  customers: memoryStore.customers,
+  // Save customers and write to sessionStorage
+  setCustomers: (data) =>
+    set(() => {
+      sessionStorage.setItem("customers", JSON.stringify(data));
+      return { customers: data };
+    }),
 
-  setCustomers: (data) => {
-    memoryStore.customers = data;
-    set({ customers: data });
-  },
-
-  addCustomer: (customer) => {
-    memoryStore.customers.push(customer);
-    set({ customers: memoryStore.customers });
-  },
+  // Load customers from sessionStorage on app start or refresh
+  loadFromSession: () =>
+    set(() => {
+      const stored = sessionStorage.getItem("customers");
+      if (stored) {
+        return { customers: JSON.parse(stored) };
+      }
+      return { customers: [] };
+    }),
 }));
-
-export default useCustomerStore;
