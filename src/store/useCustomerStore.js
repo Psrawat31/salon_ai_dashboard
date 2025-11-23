@@ -1,19 +1,21 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
-const useCustomerStore = create(
-  persist(
-    (set) => ({
-      customers: [],
-      setCustomers: (data) => set({ customers: data }),
-      addCustomer: (customer) =>
-        set((state) => ({ customers: [...state.customers, customer] })),
-    }),
-    {
-      name: "customer-storage", // localStorage key
-      getStorage: () => localStorage,
-    }
-  )
-);
+let memoryStore = {
+  customers: []
+};
+
+const useCustomerStore = create((set) => ({
+  customers: memoryStore.customers,
+
+  setCustomers: (data) => {
+    memoryStore.customers = data;
+    set({ customers: data });
+  },
+
+  addCustomer: (customer) => {
+    memoryStore.customers.push(customer);
+    set({ customers: memoryStore.customers });
+  },
+}));
 
 export default useCustomerStore;
