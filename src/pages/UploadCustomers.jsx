@@ -1,6 +1,6 @@
 import React from "react";
 import * as XLSX from "xlsx";
-import useCustomerStore from "../store/useCustomerStore";   // ✅ FIXED IMPORT
+import { useCustomerStore } from "../store/useCustomerStore";
 
 export default function UploadCustomers() {
   const { customers, setCustomers } = useCustomerStore();
@@ -18,10 +18,20 @@ export default function UploadCustomers() {
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const json = XLSX.utils.sheet_to_json(sheet);
 
-      // Save to sessionStorage
-      sessionStorage.setItem("customers", JSON.stringify(json));
+      console.log("🔥 PARSED JSON:", json);
 
-      // Save to Zustand store
+      // TEST LINE
+      console.log("🔥🔥 ATTEMPTING TO SAVE INTO SESSION STORAGE");
+
+      // Save to sessionStorage
+      try {
+        sessionStorage.setItem("customers", JSON.stringify(json));
+        console.log("✅ SAVED TO SESSION STORAGE");
+      } catch (err) {
+        console.error("❌ ERROR WRITING SESSION STORAGE:", err);
+      }
+
+      // Update Zustand store
       setCustomers(json);
     };
 
