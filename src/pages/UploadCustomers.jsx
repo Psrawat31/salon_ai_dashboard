@@ -1,6 +1,6 @@
 import React from "react";
 import * as XLSX from "xlsx";
-import { useCustomerStore } from "../store/useCustomerStore";
+import useCustomerStore from "../store/useCustomerStore";
 
 export default function UploadCustomers() {
   const { customers, setCustomers } = useCustomerStore();
@@ -16,23 +16,29 @@ export default function UploadCustomers() {
       const workbook = XLSX.read(data, { type: "array" });
 
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(sheet);
 
-      console.log("🔥 PARSED JSON:", json);
+      // Convert sheet → array of arrays
+      const raw = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-      // TEST LINE
-      console.log("🔥🔥 ATTEMPTING TO SAVE INTO SESSION STORAGE");
+      const headers = raw[0]; // first row
+      const rows = raw.slice(1);
+
+      // Convert rows → objects
+      const finalData = rows.map((row) => {
+        let obj = {};
+        headers.forEach((h, i) => {
+          obj[h] = row[i];
+        });
+        return obj;
+      });
+
+      console.log("FINAL PARSED DATA:", finalData);
 
       // Save to sessionStorage
-      try {
-        sessionStorage.setItem("customers", JSON.stringify(json));
-        console.log("✅ SAVED TO SESSION STORAGE");
-      } catch (err) {
-        console.error("❌ ERROR WRITING SESSION STORAGE:", err);
-      }
+      sessionStorage.setItem("customers", JSON.stringify(finalData));
 
-      // Update Zustand store
-      setCustomers(json);
+      // Save to Zustand
+      setCustomers(finalData);
     };
 
     reader.readAsArrayBuffer(file);
@@ -55,23 +61,21 @@ export default function UploadCustomers() {
         <table className="mt-4 w-full border-collapse">
           <thead>
             <tr>
-              <th className="border px-3 py-2 text-left">name</th>
-              <th className="border px-3 py-2 text-left">lastVisit</th>
-              <th className="border px-3 py-2 text-left">service</th>
-              <th className="border px-3 py-2 text-left">revenue</th>
-              <th className="border px-3 py-2 text-left">contacted</th>
+              <th className="border px-3 py-2">name</th>
+              <th className="border px-3 py-2">lastVisit</th>
+              <th className="border px-3 py-2">service</th>
+              <th className="border px-3 py-2">revenue</th>
+              <th className="border px-3 py-2">contacted</th>
             </tr>
           </thead>
           <tbody>
-            {customers.map((c, index) => (
-              <tr key={index}>
+            {customers.map((c, i) => (
+              <tr key={i}>
                 <td className="border px-3 py-2">{c.name}</td>
                 <td className="border px-3 py-2">{c.lastVisit}</td>
                 <td className="border px-3 py-2">{c.service}</td>
                 <td className="border px-3 py-2">{c.revenue}</td>
-                <td className="border px-3 py-2">
-                  {c.contacted ? "Yes" : "No"}
-                </td>
+                <td className="border px-3 py-2">{c.contacted}</td>
               </tr>
             ))}
           </tbody>

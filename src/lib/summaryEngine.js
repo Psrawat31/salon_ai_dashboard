@@ -1,64 +1,67 @@
-// FINAL WORKING SUMMARY ENGINE
-
-export function generateSummary(customers) {
-  if (!customers || customers.length === 0) {
-    return {
-      hotCustomers: 0,
-      contactedToday: 0,
-      stillToContact: 0,
-      potentialRevenue: 0,
-      contactedRevenue: 0,
-      hotList: [],
-    };
-  }
-
-  // Normalize all Excel values
-  const normalized = customers.map((c) => ({
-    name: c.name,
-    service: c.service,
-    revenue: Number(c.revenue) || 0,
-    lastVisit: formatDate(c.lastVisit),
-    contacted: convertContacted(c.contacted),
-  }));
-
+// Utility: days between today and lastVisit
+function daysAgo(dateStr) {
   const today = new Date();
+  const past = new Date(dateStr);
+  const diff = today - past; // ms
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
+}
 
-  const hotList = normalized.filter((c) => {
-    if (!c.lastVisit) return false;
-    const last = new Date(c.lastVisit);
-    const diff = (today - last) / (1000 * 60 * 60 * 24);
-    return diff >= 30;
+// Main summary function
+export function generateSummary(customers) {
+  if (!Array.isArray(customers)) return emptySummary();
+
+  let hotCustomers = 0;
+  let contactedToday = 0;
+  let stillToContact = 0;
+  let potentialRevenue = 0;
+  let contactedRevenue = 0;
+
+  let hotList = [];
+
+  customers.forEach((c) => {
+    const days = daysAgo(c.lastVisit);
+    const contacted = String(c.contacted).toLowerCase() === "yes";
+    const revenue = Number(c.revenue) || 0;
+
+    // 🔥 HOT IF >30 DAYS AND NOT CONTACTED
+    if (days > 30 && !contacted) {
+      hotCustomers++;
+      stillToContact++;
+      potentialRevenue += revenue;
+
+      hotList.push({
+        name: c.name,
+        lastVisit: c.lastVisit,
+        service: c.service,
+        revenue: revenue,
+      });
+    }
+
+    // 📞 CONTACTED TODAY
+    if (contacted) {
+      contactedToday++;
+      contactedRevenue += revenue;
+    }
   });
 
-  const contactedToday = normalized.filter((c) => c.contacted === true);
-  const stillToContact = normalized.filter((c) => c.contacted === false);
-
-  const potentialRevenue = hotList.reduce((a, b) => a + b.revenue, 0);
-  const contactedRevenue = contactedToday.reduce((a, b) => a + b.revenue, 0);
-
   return {
-    hotCustomers: hotList.length,
-    contactedToday: contactedToday.length,
-    stillToContact: stillToContact.length,
+    hotCustomers,
+    contactedToday,
+    stillToContact,
     potentialRevenue,
     contactedRevenue,
     hotList,
   };
 }
 
-// Excel often gives weird date formats
-function formatDate(value) {
-  try {
-    return new Date(value).toISOString().split("T")[0];
-  } catch {
-    return null;
-  }
-}
-
-// Convert Yes/No → boolean
-function convertContacted(val) {
-  if (!val) return false;
-  const v = String(val).toLowerCase();
-  if (v === "yes" || v === "true" || v === "1") return true;
-  return false;
+// Default empty summary to avoid crashes
+function emptySummary() {
+  return {
+    hotCustomers: 0,
+    contactedToday: 0,
+    stillToContact: 0,
+    potentialRevenue: 0,
+    contactedRevenue: 0,
+    hotList: [],
+  };
 }

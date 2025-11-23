@@ -1,22 +1,26 @@
 import { create } from "zustand";
 
-export const useCustomerStore = create((set) => ({
+const useCustomerStore = create((set) => ({
   customers: [],
 
-  // Save customers and write to sessionStorage
-  setCustomers: (data) =>
-    set(() => {
-      sessionStorage.setItem("customers", JSON.stringify(data));
-      return { customers: data };
-    }),
+  // Save new list
+  setCustomers: (list) => {
+    sessionStorage.setItem("customers", JSON.stringify(list));
+    set({ customers: list });
+  },
 
-  // Load customers from sessionStorage on app start or refresh
-  loadFromSession: () =>
-    set(() => {
+  // Load from sessionStorage
+  loadFromSession: () => {
+    try {
       const stored = sessionStorage.getItem("customers");
       if (stored) {
-        return { customers: JSON.parse(stored) };
+        const parsed = JSON.parse(stored);
+        set({ customers: parsed });
       }
-      return { customers: [] };
-    }),
+    } catch (err) {
+      console.error("Error loading from session:", err);
+    }
+  },
 }));
+
+export default useCustomerStore;

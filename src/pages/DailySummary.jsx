@@ -1,17 +1,22 @@
 import React from "react";
-import { useCustomerStore } from "../store/useCustomerStore";
+import useCustomerStore from "../store/useCustomerStore";
 import { generateSummary } from "../lib/summaryEngine";
 
 export default function DailySummary() {
   const { customers, loadFromSession } = useCustomerStore();
 
+  // Load customers from sessionStorage on initial mount
   React.useEffect(() => {
-    if (!customers || customers.length === 0) {
-      loadFromSession();
-    }
+    loadFromSession();
   }, []);
 
-  const summary = generateSummary(customers || []);
+  // Zustand OR fallback to sessionStorage
+  const finalCustomers =
+    customers && customers.length > 0
+      ? customers
+      : JSON.parse(sessionStorage.getItem("customers") || "[]");
+
+  const summary = generateSummary(finalCustomers);
 
   return (
     <div className="p-6">
